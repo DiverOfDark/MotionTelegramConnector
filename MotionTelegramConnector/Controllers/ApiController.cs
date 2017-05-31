@@ -58,7 +58,7 @@ namespace MotionTelegramConnector.Controllers
             return Ok();
         }
 
-        private async void Process(Update update)
+        public async void Process(Update update)
         {
             _logger.LogInformation(JsonConvert.SerializeObject(update));
             var debug = _debugSessions.Contains(update.Message.Chat.Id);

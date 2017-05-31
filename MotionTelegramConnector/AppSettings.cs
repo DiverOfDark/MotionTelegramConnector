@@ -12,7 +12,6 @@ namespace MotionTelegramConnector
         public void Validate()
         {
             if (string.IsNullOrEmpty(TELEGRAM_API_KEY) ||
-                string.IsNullOrEmpty(WEBSITE_URL) ||
                 string.IsNullOrEmpty(MOTION_API_KEY) ||
                 string.IsNullOrEmpty(MOTION_BOT_ID))
             {

@@ -2,12 +2,16 @@
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MotionTelegramConnector.Controllers;
 using MotionTelegramConnector.MotionAi;
+using Newtonsoft.Json;
 using Telegram.Bot;
 
 namespace MotionTelegramConnector
@@ -39,9 +43,8 @@ namespace MotionTelegramConnector
                 {
                     Timeout = TimeSpan.FromSeconds(15)
                 });
-            client.SetWebhookAsync(settings.WEBSITE_URL);
 
-            var mai = new MotionAiService(settings.MOTION_API_KEY, settings.MOTION_BOT_ID, client);
+          var mai = new MotionAiService(settings.MOTION_API_KEY, settings.MOTION_BOT_ID, client);
             
             services.AddSingleton<ITelegramBotClient>(client);
             services.AddSingleton<MotionAiService>(mai);
@@ -50,6 +53,34 @@ namespace MotionTelegramConnector
             services.AddWebEncoders();
             services.AddRouting();
             services.AddLogging();
+
+            Init(settings, client, mai);
+        }
+
+        private static async void Init(AppSettings settings, TelegramBotClient client, MotionAiService mai)
+        {
+            if (!string.IsNullOrWhiteSpace(settings.WEBSITE_URL))
+            {
+                await client.SetWebhookAsync(settings.WEBSITE_URL);
+            }
+            else
+            {
+                var whi = await client.GetWebhookInfoAsync();
+                Console.WriteLine(JsonConvert.SerializeObject(whi));
+
+                if (!string.IsNullOrWhiteSpace(whi.Url)) ;
+                await client.DeleteWebhookAsync();
+
+                var apiController = new ApiController(new Logger<ApiController>(new LoggerFactory()), mai, client);
+                Timer timer = new Timer(async _ =>
+                {
+                    var updates = await client.GetUpdatesAsync();
+                    foreach (var up in updates)
+                    {
+                        apiController.Process(up);
+                    }
+                }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
