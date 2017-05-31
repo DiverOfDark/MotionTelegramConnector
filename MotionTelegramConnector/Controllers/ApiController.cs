@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MotionTelegramConnector.MotionAi;
+using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -73,6 +74,7 @@ namespace MotionTelegramConnector.Controllers
                 {
                     // Echo each Message
                     await Extensions.Retry(()=> _client.SendTextMessageAsync(message.Chat.Id, response));
+                    await Extensions.Retry(()=> _client.SendTextMessageAsync(message.Chat.Id, JsonConvert.SerializeObject(message)));
                 }
             }
             catch (Exception ex) when (debug)
