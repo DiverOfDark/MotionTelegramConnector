@@ -19,6 +19,7 @@ namespace MotionTelegramConnector
 {
     public class Startup
     {
+        private static Timer _timer;
         public IConfigurationRoot Configuration { get; set; }
 
         public Startup()
@@ -78,7 +79,7 @@ namespace MotionTelegramConnector
 
                 int lastId = -1; 
                 
-                Timer timer = new Timer(async _ =>
+                _timer = new Timer(async _ =>
                 {
                     var updates = await client.GetUpdatesAsync(lastId + 1);
                     lastId = updates.FirstOrDefault()?.Id ?? lastId;
