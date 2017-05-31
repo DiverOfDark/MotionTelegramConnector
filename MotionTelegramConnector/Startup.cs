@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -68,13 +69,19 @@ namespace MotionTelegramConnector
                 var whi = await client.GetWebhookInfoAsync();
                 Console.WriteLine(JsonConvert.SerializeObject(whi));
 
-                if (!string.IsNullOrWhiteSpace(whi.Url)) ;
-                await client.DeleteWebhookAsync();
+                if (!string.IsNullOrWhiteSpace(whi.Url))
+                {
+                    await client.DeleteWebhookAsync();
+                }
 
                 var apiController = new ApiController(new Logger<ApiController>(new LoggerFactory()), mai, client);
+
+                int lastId = -1; 
+                
                 Timer timer = new Timer(async _ =>
                 {
-                    var updates = await client.GetUpdatesAsync();
+                    var updates = await client.GetUpdatesAsync(lastId + 1);
+                    lastId = updates.FirstOrDefault()?.Id ?? lastId;
                     foreach (var up in updates)
                     {
                         apiController.Process(up);
