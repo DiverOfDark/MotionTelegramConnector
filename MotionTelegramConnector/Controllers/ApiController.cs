@@ -60,6 +60,7 @@ namespace MotionTelegramConnector.Controllers
 
         private async void Process(Update update)
         {
+            _logger.LogInformation(JsonConvert.SerializeObject(update));
             var debug = _debugSessions.Contains(update.Message.Chat.Id);
 
             await Extensions.Retry(()=> _client.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing));
@@ -68,7 +69,7 @@ namespace MotionTelegramConnector.Controllers
             {
                 var message = update.Message;
 
-                var response = await _svc.SendRequest(update.Message.Text, message.Chat.Id, LogEx);
+                var response = await _svc.SendRequest(update.Message.Text, message.Chat.Id, LogEx, _logger);
 
                 if (debug)
                 {

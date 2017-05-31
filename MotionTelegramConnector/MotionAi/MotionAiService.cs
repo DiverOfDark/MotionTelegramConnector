@@ -5,6 +5,8 @@ using System.Net.Http;
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using MotionTelegramConnector.Controllers;
 using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -34,9 +36,10 @@ namespace MotionTelegramConnector.MotionAi
         private string GetUrl(string message, string session) =>
             $"https://api.motion.ai/messageBot?msg={UrlEncoder.Default.Encode(message)}&bot={_botId}&session={session}&key={_apiKey}";
 
-        public async Task<string> SendRequest(string message, string session, Action<Exception> log)
+        public async Task<string> SendRequest(string message, string session, Action<Exception> log, ILogger<ApiController> logger)
         {
             var data = await Extensions.Retry(()=> HttpClient.GetStringAsync(GetUrl(message, session)));
+            logger.LogInformation(data);
 
             Process(session, data, log);
 
