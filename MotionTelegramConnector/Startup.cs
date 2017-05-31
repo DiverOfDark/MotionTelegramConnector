@@ -54,7 +54,7 @@ namespace MotionTelegramConnector
             services.AddWebEncoders();
             services.AddRouting();
             services.AddLogging();
-
+            
             Init(settings, client, mai);
         }
 
@@ -93,7 +93,7 @@ namespace MotionTelegramConnector
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
-            loggerFactory.AddConsole();
+            loggerFactory.AddConsole(LogLevel.Debug);
 
             if (env.IsDevelopment())
             {
