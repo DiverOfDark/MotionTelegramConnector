@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MotionTelegramConnector.MotionAi;
-using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 
 namespace MotionTelegramConnector.Controllers
 {
@@ -18,7 +15,6 @@ namespace MotionTelegramConnector.Controllers
         private readonly ILogger<ApiController> _logger;
         private readonly MotionAiService _svc;
         private readonly ITelegramBotClient _client;
-        private readonly List<string> _debugSessions = new List<string>();
         private int _errorId = 0;
 
         public ApiController(ILogger<ApiController> logger, MotionAiService service, ITelegramBotClient client)
@@ -27,7 +23,7 @@ namespace MotionTelegramConnector.Controllers
             _svc = service;
             _client = client;
         }
-
+        
         public async Task<ActionResult> Post()
         {
             Update update;
@@ -42,52 +38,8 @@ namespace MotionTelegramConnector.Controllers
                 return Ok();
             }
 
-            if (update.Message.Text == "/switchDebug")
-            {
-                if (!_debugSessions.Contains(update.Message.Chat.Id))
-                {
-                    _debugSessions.Add(update.Message.Chat.Id);
-                }
-                else
-                {
-                    _debugSessions.Remove(update.Message.Chat.Id);
-                }
-            }
-
-            Process(update);
+            Extensions.Process(update, _logger, _client, _svc);
             return Ok();
         }
-
-        public async void Process(Update update)
-        {
-            _logger.LogInformation(JsonConvert.SerializeObject(update));
-            var debug = _debugSessions.Contains(update.Message.Chat.Id);
-
-            await Extensions.Retry(()=> _client.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing));
-
-            try
-            {
-                var message = update.Message;
-
-                var response = await _svc.SendRequest(update.Message.Text, message.Chat.Id, LogEx, _logger);
-
-                if (debug)
-                {
-                    // Echo each Message
-                    await Extensions.Retry(()=> _client.SendTextMessageAsync(message.Chat.Id, response));
-                    await Extensions.Retry(()=> _client.SendTextMessageAsync(message.Chat.Id, JsonConvert.SerializeObject(message)));
-                }
-            }
-            catch (Exception ex) when (debug)
-            {
-                await Extensions.Retry(()=> _client.SendTextMessageAsync(update.Message.Chat.Id, ex.ToString()));
-            }
-            catch (Exception ex)
-            {
-                LogEx(ex);
-            }
-        }
-
-        private void LogEx(Exception ex) => _logger.LogError(new EventId(_errorId++), ex, "Error on ApiController");
     }
 }

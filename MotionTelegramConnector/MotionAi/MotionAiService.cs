@@ -36,17 +36,17 @@ namespace MotionTelegramConnector.MotionAi
         private string GetUrl(string message, string session) =>
             $"https://api.motion.ai/messageBot?msg={UrlEncoder.Default.Encode(message)}&bot={_botId}&session={session}&key={_apiKey}";
 
-        public async Task<string> SendRequest(string message, string session, Action<Exception> log, ILogger<ApiController> logger)
+        public async Task<string> SendRequest(string message, string session, ILogger<ApiController> logger)
         {
             var data = await Extensions.Retry(()=> HttpClient.GetStringAsync(GetUrl(message, session)));
             logger.LogInformation(data);
 
-            Process(session, data, log);
+            Process(session, data, logger);
 
             return data;
         }
 
-        private async void Process(string session, string data, Action<Exception> log)
+        private async void Process(string session, string data, ILogger<ApiController> log)
         {
             var jobject = JsonConvert.DeserializeObject<Response>(data);
 
@@ -83,7 +83,7 @@ namespace MotionTelegramConnector.MotionAi
                         }
                         catch(Exception ex)
                         {
-                            log(ex);
+                            log.LogError(ex.ToString());
                         }
                     }
                     responses.Add(jobject.BotResponse.Substring(pos));

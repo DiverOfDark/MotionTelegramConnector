@@ -1,10 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -75,7 +73,7 @@ namespace MotionTelegramConnector
                     await client.DeleteWebhookAsync();
                 }
 
-                var apiController = new ApiController(new Logger<ApiController>(new LoggerFactory()), mai, client);
+                var logger = new Logger<ApiController>(new LoggerFactory());
 
                 int lastId = -1; 
                 
@@ -85,7 +83,7 @@ namespace MotionTelegramConnector
                     lastId = updates.FirstOrDefault()?.Id ?? lastId;
                     foreach (var up in updates)
                     {
-                        apiController.Process(up);
+                        Extensions.Process(up, logger, client, mai);
                     }
                 }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
             }
