@@ -6,14 +6,13 @@ using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using MotionTelegramConnector.Controllers;
 using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace MotionTelegramConnector.MotionAi
+namespace MotionTelegramConnector.Services
 {
     public class MotionAiService
     {
@@ -23,30 +22,32 @@ namespace MotionTelegramConnector.MotionAi
         private static readonly HttpClient HttpClient = new HttpClient();
 
         private readonly ITelegramBotClient _client;
+        private readonly ILogger<MotionAiService> _logger;
         private readonly string _botId;
         private readonly string _apiKey;
 
-        public MotionAiService(string apiKey, string botId, ITelegramBotClient client)
+        public MotionAiService(AppSettings settings, ITelegramBotClient client, ILogger<MotionAiService> logger)
         {
-            _apiKey = apiKey;
-            _botId = botId;
+            _apiKey = settings.MOTION_API_KEY;
+            _botId = settings.MOTION_BOT_ID;
             _client = client;
+            _logger = logger;
         }
 
         private string GetUrl(string message, string session) =>
             $"https://api.motion.ai/messageBot?msg={UrlEncoder.Default.Encode(message)}&bot={_botId}&session={session}&key={_apiKey}";
 
-        public async Task<string> SendRequest(string message, string session, ILogger<ApiController> logger)
+        public async Task<string> SendRequest(string message, string session)
         {
             var data = await Extensions.Retry(()=> HttpClient.GetStringAsync(GetUrl(message, session)));
-            logger.LogInformation(data);
+            _logger.LogInformation(data);
 
-            Process(session, data, logger);
+            Process(session, data);
 
             return data;
         }
 
-        private async void Process(string session, string data, ILogger<ApiController> log)
+        private async void Process(string session, string data)
         {
             var jobject = JsonConvert.DeserializeObject<Response>(data);
 
@@ -83,7 +84,7 @@ namespace MotionTelegramConnector.MotionAi
                         }
                         catch(Exception ex)
                         {
-                            log.LogError(ex.ToString());
+                            _logger.LogError(ex.ToString());
                         }
                     }
                     responses.Add(jobject.BotResponse.Substring(pos));

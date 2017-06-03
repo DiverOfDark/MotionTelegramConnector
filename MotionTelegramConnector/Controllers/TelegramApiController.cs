@@ -3,25 +3,22 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using MotionTelegramConnector.MotionAi;
-using Telegram.Bot;
+using MotionTelegramConnector.Services;
 using Telegram.Bot.Types;
 
 namespace MotionTelegramConnector.Controllers
 {
     [Route("api")]
-    public class ApiController : Controller
+    public class TelegramApiController : Controller
     {
-        private readonly ILogger<ApiController> _logger;
-        private readonly MotionAiService _svc;
-        private readonly ITelegramBotClient _client;
+        private readonly TelegramService _telegram;
+        private readonly ILogger<TelegramApiController> _logger;
         private int _errorId = 0;
 
-        public ApiController(ILogger<ApiController> logger, MotionAiService service, ITelegramBotClient client)
+        public TelegramApiController(TelegramService telegram, ILogger<TelegramApiController> logger)
         {
+            _telegram = telegram;
             _logger = logger;
-            _svc = service;
-            _client = client;
         }
         
         public async Task<ActionResult> Post()
@@ -34,11 +31,11 @@ namespace MotionTelegramConnector.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(new EventId(_errorId++), ex, "Error on ApiController");
+                _logger.LogError(new EventId(_errorId++), ex, "Error on TelegramApiController");
                 return Ok();
             }
 
-            Extensions.Process(update, _logger, _client, _svc);
+            await _telegram.Process(update);
             return Ok();
         }
     }

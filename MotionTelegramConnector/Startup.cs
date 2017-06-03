@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using Microsoft.AspNetCore.Builder;
@@ -8,16 +7,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MotionTelegramConnector.Controllers;
-using MotionTelegramConnector.MotionAi;
-using Newtonsoft.Json;
+using MotionTelegramConnector.Services;
 using Telegram.Bot;
 
 namespace MotionTelegramConnector
 {
     public class Startup
     {
-        private static Timer _timer;
         public IConfigurationRoot Configuration { get; set; }
 
         public Startup()
@@ -38,55 +34,23 @@ namespace MotionTelegramConnector
 
             settings.Validate();
             
+            services.AddSingleton<AppSettings>();
+            
             var client = new TelegramBotClient(settings.TELEGRAM_API_KEY,
                 new HttpClient
                 {
                     Timeout = TimeSpan.FromSeconds(15)
                 });
 
-          var mai = new MotionAiService(settings.MOTION_API_KEY, settings.MOTION_BOT_ID, client);
-            
             services.AddSingleton<ITelegramBotClient>(client);
-            services.AddSingleton<MotionAiService>(mai);
+            services.AddSingleton<MotionAiService>();
+            services.AddSingleton<TelegramService>();
+            services.AddSingleton<GoogleAnalyticsService>();
             
             services.AddMvc();
             services.AddWebEncoders();
             services.AddRouting();
             services.AddLogging();
-            
-            Init(settings, client, mai);
-        }
-
-        private static async void Init(AppSettings settings, TelegramBotClient client, MotionAiService mai)
-        {
-            if (!string.IsNullOrWhiteSpace(settings.WEBSITE_URL))
-            {
-                await client.SetWebhookAsync(settings.WEBSITE_URL);
-            }
-            else
-            {
-                var whi = await client.GetWebhookInfoAsync();
-                Console.WriteLine(JsonConvert.SerializeObject(whi));
-
-                if (!string.IsNullOrWhiteSpace(whi.Url))
-                {
-                    await client.DeleteWebhookAsync();
-                }
-
-                var logger = new Logger<ApiController>(new LoggerFactory());
-
-                int lastId = -1; 
-                
-                _timer = new Timer(async _ =>
-                {
-                    var updates = await client.GetUpdatesAsync(lastId + 1);
-                    lastId = updates.FirstOrDefault()?.Id ?? lastId;
-                    foreach (var up in updates)
-                    {
-                        Extensions.Process(up, logger, client, mai);
-                    }
-                }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
-            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -94,6 +58,8 @@ namespace MotionTelegramConnector
         {
             loggerFactory.AddConsole(LogLevel.Debug);
 
+            app.ApplicationServices.GetService<TelegramService>().Init();
+            
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

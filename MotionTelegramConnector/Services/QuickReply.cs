@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace MotionTelegramConnector.MotionAi
+namespace MotionTelegramConnector.Services
 {
     [JsonObject]
     public class QuickReply

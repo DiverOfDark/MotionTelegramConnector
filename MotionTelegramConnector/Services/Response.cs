@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace MotionTelegramConnector.MotionAi
+namespace MotionTelegramConnector.Services
 {
     [JsonObject]
     public class Response
