@@ -34,7 +34,7 @@ namespace MotionTelegramConnector
 
             settings.Validate();
             
-            services.AddSingleton<AppSettings>();
+            services.AddSingleton<AppSettings>(settings);
             
             var client = new TelegramBotClient(settings.TELEGRAM_API_KEY,
                 new HttpClient
