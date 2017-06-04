@@ -21,7 +21,7 @@ namespace MotionTelegramConnector.Controllers
             _ga = ga;
         }
 
-        [Route("event/{eventName}")]
+        [Route("event/{*eventName}")]
         public async Task<ActionResult> Event(string eventName)
         {
             try
