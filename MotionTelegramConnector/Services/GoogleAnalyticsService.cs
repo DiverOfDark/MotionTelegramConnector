@@ -1,64 +1,151 @@
-﻿namespace MotionTelegramConnector.Services
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Runtime.InteropServices.ComTypes;
+using System.Threading;
+
+namespace MotionTelegramConnector.Services
 {
     public class GoogleAnalyticsService
     {
-//Для Google Analytics собираем два вида метрик – pageview для вызовов блока диалога и event для полезных действий.
-        public static async void LogPageView()
+        private class PageView
         {
-/*
-Pageview request:
- 
-Триггер – вызов любого модуля motion.ai
- 
-POST request to https://www.google-analytics.com/collect
- 
-Атрибуты:
- 
-v=1
-tid=UA-98473469-1
-t=pageview
-dp=rbot\<pagename>  где <pagename> это имя модуля motion.ai (moduleNickname)
-cid=<session>  сессия из motion.ai
-uid=<user_id> пользователь из Telegram
-*/            
+            public string ModuleName { get; set; }
+            public string Session { get; set; }
+
+            public virtual bool IsValid() => !string.IsNullOrWhiteSpace(Session) && !string.IsNullOrWhiteSpace(ModuleName);
         }
 
-        public static async void LogEvent()
+        private const string Url = "https://www.google-analytics.com/collect";
+        
+        private static readonly HttpClient HttpClient = new HttpClient();
+
+        private readonly ConcurrentDictionary<string,string> _sessions = new ConcurrentDictionary<string, string>();
+        private readonly string _counter;
+        private readonly string _botname;
+        
+        private readonly Queue<PageView> _pageViews = new Queue<PageView>(); 
+        private readonly Queue<PageView> _events = new Queue<PageView>(); 
+
+        public GoogleAnalyticsService(AppSettings settings)
         {
+            _counter = settings.GA_COUNTER;
+            _botname = settings.GA_BOTNAME;
+        }
+        
+        public async void LogPageView(string moduleName, string session)
+        {
+            {
+                var pageView = new PageView
+                {
+                    Session = session,
+                    ModuleName = moduleName
+                };
+
+                if (pageView.IsValid())
+                {
+                    _pageViews.Enqueue(pageView);
+                }
+            }
+
+            var list = _pageViews.ToList();
+
+            while (_pageViews.Count > 0)
+            {
+                var item = _pageViews.Dequeue();
+                if (_sessions.ContainsKey(item.Session))
+                {
+                    var user = _sessions[item.Session];
+                    var keys = new Dictionary<string, string>
+                    {
+                        {"v","1"},
+                        {"tid", _counter},
+                        {"t", "pageview"},
+                        {"dp", _botname + "\\" + item.ModuleName},
+                        {"cid", item.Session},
+                        {"uid", user}
+                    };
+                    var content = new FormUrlEncodedContent(keys);
+                    await HttpClient.PostAsync(Url, content);
+                }
+                else
+                {
+                    list.Add(item);
+                }
+            }
+
+            foreach (var item in list)
+            {
+                _pageViews.Enqueue(item);
+            }
+        }
+
+        public async void LogEvent(string eventName, string session)
+        {
+            {
+                var pageView = new PageView
+                {
+                    Session = session,
+                    ModuleName = eventName
+                };
+
+                if (pageView.IsValid())
+                {
+                    _events.Enqueue(pageView);
+                }
+            }
+
+            var list = _events.ToList();
+
+            while (_events.Count > 0)
+            {
+                var item = _events.Dequeue();
+                if (_sessions.ContainsKey(item.Session))
+                {
+                    var user = _sessions[item.Session];
+                    var keys = new Dictionary<string, string>
+                    {
+                        {"v", "1"},
+                        {"tid", _counter},
+                        {"e", "event"},
+                        {"ea", item.ModuleName},
+                        {"ec", "user_actions"},
+                        {"cid", item.Session},
+                        {"uid", user}
+                    };
+                    var content = new FormUrlEncodedContent(keys);
+                    await HttpClient.PostAsync(Url, content);
+                }
+                else
+                {
+                    list.Add(item);
+                }
+            }
+
+            foreach (var item in list)
+            {
+                _events.Enqueue(item);
+            }
+            
             /*
-    Event request:
-     
-    Триггер – вызов одного из модулей: 
-     
-    positions/apply/get-email
-    positions/apply/confirmation
-    interview/start
-    interview/answer-correct
-    ЗадачаXX 
-     
-     
-     
-    POST request to https://www.google-analytics.com/collect
-     
-    Атрибуты:
-     
-    v=1
-    tid=UA-98473469-1
-    е=event
-    ea=<event_name> где event_name код события
-    ec=user_actions
-    cid=<session>  из motion.ai
-    uid=<user_id> из Telegram
-     
-     
-    Dialog Modules – EventNames
-     
-    positions/apply/get-email   -  apply_to_position
-    positions/apply/confirmation  -  send_application
-    interview/start -  interview_start
-    interview/answer-correct   -   interview_task_correct
-    ЗадачаXX   -  interview_next_task
-     
-            */        }
+Dialog Modules – EventNames
+
+positions/apply/get-email   -  apply_to_position
+positions/apply/confirmation  -  send_application
+interview/start -  interview_start
+interview/answer-correct   -   interview_task_correct
+ЗадачаXX   -  interview_next_task
+
+*/
+        }
+
+        public void RegisterSessionUser(string session, string user)
+        {
+            _sessions[session] = user;
+            
+            LogPageView(null, null);
+            LogEvent(null, null);
+        }
     }
 }

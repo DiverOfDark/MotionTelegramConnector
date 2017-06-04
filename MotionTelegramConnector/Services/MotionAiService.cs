@@ -23,15 +23,17 @@ namespace MotionTelegramConnector.Services
 
         private readonly ITelegramBotClient _client;
         private readonly ILogger<MotionAiService> _logger;
+        private readonly GoogleAnalyticsService _gas;
         private readonly string _botId;
         private readonly string _apiKey;
 
-        public MotionAiService(AppSettings settings, ITelegramBotClient client, ILogger<MotionAiService> logger)
+        public MotionAiService(AppSettings settings, ITelegramBotClient client, ILogger<MotionAiService> logger, GoogleAnalyticsService gas)
         {
             _apiKey = settings.MOTION_API_KEY;
             _botId = settings.MOTION_BOT_ID;
             _client = client;
             _logger = logger;
+            _gas = gas;
         }
 
         private string GetUrl(string message, string session) =>
@@ -53,6 +55,7 @@ namespace MotionTelegramConnector.Services
 
             if (jobject.BotResponse != null)
             {
+                _gas.RegisterSessionUser(jobject.Session, session);
                 IReplyMarkup markup = null;
 
                 if (jobject.QuickReplies?.Any() == true)

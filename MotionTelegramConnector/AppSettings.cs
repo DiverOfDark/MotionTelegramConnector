@@ -4,6 +4,8 @@ namespace MotionTelegramConnector
 {
     public class AppSettings
     {
+        public string GA_COUNTER { get; set; }
+        public string GA_BOTNAME { get; set; }
         public string TELEGRAM_API_KEY { get; set; }
         public string WEBSITE_URL { get; set; }
         public string MOTION_API_KEY { get; set; }
