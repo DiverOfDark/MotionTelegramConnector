@@ -70,13 +70,14 @@ namespace MotionTelegramConnector.Services
         {
             if (update.Message.Text == "/switchDebug")
             {
-                if (!DebugSessions.Contains(update.Message.Chat.Id))
+                var existing = DebugSessions.FirstOrDefault(v => (string) v == update.Message.Chat.Id);
+                if (existing != null)
                 {
-                    DebugSessions.Add(update.Message.Chat.Id);
+                    DebugSessions.Remove(existing);
                 }
                 else
                 {
-                    DebugSessions.Remove(update.Message.Chat.Id);
+                    DebugSessions.Add(update.Message.Chat.Id);
                 }
             }
 
