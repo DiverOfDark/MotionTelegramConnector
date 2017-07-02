@@ -59,7 +59,7 @@ namespace MotionTelegramConnector.Services
             }
         }
         
-        public async Task SendToDebug(string data, [CallerMemberName] string method = null, [CallerFilePath] string file = null, [CallerLineNumber] int line = 0)
+        public async void SendToDebug(string data, [CallerMemberName] string method = null, [CallerFilePath] string file = null, [CallerLineNumber] int line = 0)
         {
             foreach (var chatid in DebugSessions)
             {
@@ -93,12 +93,11 @@ namespace MotionTelegramConnector.Services
 
                 var response = await _svc.SendRequest(update.Message.Text, message.Chat.Id);
 
-                await SendToDebug(response);
-                await SendToDebug(JsonConvert.SerializeObject(message));
+                SendToDebug(response + "\r\n" + JsonConvert.SerializeObject(message));
             }
             catch (Exception ex)
             {
-                await SendToDebug(ex.ToString());
+                SendToDebug(ex.ToString());
                 _logger.LogError(ex.ToString());
             }
         }

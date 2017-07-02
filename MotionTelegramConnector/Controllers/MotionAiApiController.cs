@@ -43,15 +43,15 @@ namespace MotionTelegramConnector.Controllers
 
                 _ga.LogEvent(eventName, session);
                 
-                await _client.SendToDebug(data);
+                _client.SendToDebug(data);
             }
             catch (Exception ex)
             {
-                await _client.SendToDebug("posted: " + data + "\r\nquery: " + (Request.QueryString.Value ?? "Unknown") + "\r\n" + ex.ToString());
-                return Ok();
+                _client.SendToDebug("posted: " + data + "\r\nquery: " + (Request.QueryString.Value ?? "Unknown") + "\r\n" + ex.ToString());
+                return Content("{}");
             }
 
-            return Ok();
+            return Content("{}");
         }
         
         public async Task<ActionResult> Post()
@@ -76,15 +76,15 @@ namespace MotionTelegramConnector.Controllers
                 {
                     _ga.LogPageView(moduleName, session);
                 }
-                await _client.SendToDebug(WebUtility.UrlDecode(data));
+                _client.SendToDebug(WebUtility.UrlDecode(data));
             }
             catch (Exception ex)
             {
-                await _client.SendToDebug("posted: " + data + "\r\n" + ex.ToString());
-                return Ok();
+                _client.SendToDebug("posted: " + data + "\r\n" + ex.ToString());
+                return Content("{}");
             }
 
-            return Ok();
+            return Content("{}");
         }
     }
 }

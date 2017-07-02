@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,8 @@ namespace MotionTelegramConnector.Controllers
         private readonly TelegramService _telegram;
         private readonly ILogger<TelegramApiController> _logger;
         private int _errorId = 0;
-
+        private int _lastReceivedUpdateId = -1;
+        
         public TelegramApiController(TelegramService telegram, ILogger<TelegramApiController> logger)
         {
             _telegram = telegram;
@@ -35,7 +37,11 @@ namespace MotionTelegramConnector.Controllers
                 return Content("{}");
             }
 
-            await _telegram.Process(update);
+            if (_lastReceivedUpdateId < update.Id)
+            {
+                _lastReceivedUpdateId = update.Id;
+                _telegram.Process(update);
+            }
             return Content("{}");
         }
     }
