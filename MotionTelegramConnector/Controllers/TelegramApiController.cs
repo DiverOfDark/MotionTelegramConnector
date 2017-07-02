@@ -32,11 +32,11 @@ namespace MotionTelegramConnector.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(new EventId(_errorId++), ex, "Error on TelegramApiController");
-                return Ok();
+                return Content("{}");
             }
 
             await _telegram.Process(update);
-            return Ok();
+            return Content("{}");
         }
     }
 }
