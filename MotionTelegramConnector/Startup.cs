@@ -59,6 +59,8 @@ namespace MotionTelegramConnector
             loggerFactory.AddConsole(LogLevel.Debug);
 
             app.ApplicationServices.GetService<TelegramService>().Init();
+
+            app.UseEnableRequestRewind();
             
             if (env.IsDevelopment())
             {
