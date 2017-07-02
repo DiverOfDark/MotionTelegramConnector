@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Server.Kestrel.Internal.Http;
 using MotionTelegramConnector.Services;
 
 namespace MotionTelegramConnector.Controllers
@@ -24,9 +26,10 @@ namespace MotionTelegramConnector.Controllers
         [Route("event/{*eventName}")]
         public async Task<ActionResult> Event(string eventName)
         {
+            string data = "Unknown";
             try
             {
-                var data = new StreamReader(HttpContext.Request.Body).ReadToEnd();
+                data = new StreamReader(HttpContext.Request.Body).ReadToEnd();
 
                 var entries = data.Split('&');
 
@@ -44,7 +47,7 @@ namespace MotionTelegramConnector.Controllers
             }
             catch (Exception ex)
             {
-                await _client.SendToDebug(ex.ToString());
+                await _client.SendToDebug("posted: " + data + "\r\n" + ex.ToString());
                 return Ok();
             }
 
@@ -53,9 +56,10 @@ namespace MotionTelegramConnector.Controllers
         
         public async Task<ActionResult> Post()
         {
+            string data = "Unknown";
             try
             {
-                var data = new StreamReader(HttpContext.Request.Body).ReadToEnd();
+                data = new StreamReader(HttpContext.Request.Body).ReadToEnd();
 
                 var entries = data.Split('&');
 
@@ -72,11 +76,11 @@ namespace MotionTelegramConnector.Controllers
                 {
                     _ga.LogPageView(moduleName, session);
                 }
-                await _client.SendToDebug(data);
+                await _client.SendToDebug(WebUtility.UrlDecode(data));
             }
             catch (Exception ex)
             {
-                await _client.SendToDebug(ex.ToString());
+                await _client.SendToDebug("posted: " + data + "\r\n" + ex.ToString());
                 return Ok();
             }
 
