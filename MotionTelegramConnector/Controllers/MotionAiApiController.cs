@@ -43,7 +43,7 @@ namespace MotionTelegramConnector.Controllers
 
                 _ga.LogEvent(eventName, session);
                 
-                _client.SendToDebug(data);
+                _client.SendToDebug(WebUtility.UrlDecode(data));
             }
             catch (Exception ex)
             {
