@@ -121,24 +121,18 @@ namespace MotionTelegramConnector.Services
 
         public void LogEvent(string eventName, string session)
         {
-                var pageView = new PageView
-                {
-                    Session = session,
-                    ModuleName = eventName
-                };
+            var pageView = new PageView
+            {
+                Session = session,
+                ModuleName = eventName
+            };
 
-                if (pageView.IsValid())
-                {
-                    _events.Enqueue(pageView);
-                }
-            /*
-Dialog Modules – EventNames
-
-ЗадачаXX   -  interview_next_task
-
-*/
+            if (pageView.IsValid())
+            {
+                _events.Enqueue(pageView);
+            }
         }
-
+        
         public void RegisterSessionUser(string session, string user)
         {
             _sessions[session] = user;
