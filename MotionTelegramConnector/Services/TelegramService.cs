@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -58,11 +59,12 @@ namespace MotionTelegramConnector.Services
             }
         }
         
-        public async Task SendToDebug(string data)
+        public async Task SendToDebug(string data, [CallerMemberName] string method = null, [CallerFilePath] string file = null, [CallerLineNumber] int line = 0)
         {
             foreach (var chatid in DebugSessions)
             {
-                await _client.SendTextMessageAsync(chatid, data);
+                var message = $"{method} ({file} at {line}):\n\n{data}";
+                await _client.SendTextMessageAsync(chatid, message);
             }
         }
 
