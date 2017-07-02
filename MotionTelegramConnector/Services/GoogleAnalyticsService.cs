@@ -76,7 +76,7 @@ namespace MotionTelegramConnector.Services
                         {
                             {"v", "1"},
                             {"tid", _counter},
-                            {"e", "event"},
+                            {"t", "event"},
                             {"ea", item.ModuleName},
                             {"ec", "user_actions"},
                             {"cid", item.Session},
@@ -134,10 +134,6 @@ namespace MotionTelegramConnector.Services
             /*
 Dialog Modules – EventNames
 
-positions/apply/get-email   -  apply_to_position
-positions/apply/confirmation  -  send_application
-interview/start -  interview_start
-interview/answer-correct   -   interview_task_correct
 ЗадачаXX   -  interview_next_task
 
 */
