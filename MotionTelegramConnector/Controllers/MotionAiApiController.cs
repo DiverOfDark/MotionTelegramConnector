@@ -47,7 +47,7 @@ namespace MotionTelegramConnector.Controllers
             }
             catch (Exception ex)
             {
-                await _client.SendToDebug("posted: " + data + "\r\n" + ex.ToString());
+                await _client.SendToDebug("posted: " + data + "\r\nquery: " + (Request.QueryString.Value ?? "Unknown") + "\r\n" + ex.ToString());
                 return Ok();
             }
 
