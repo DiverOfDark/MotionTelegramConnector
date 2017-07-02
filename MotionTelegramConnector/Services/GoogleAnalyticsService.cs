@@ -42,7 +42,7 @@ namespace MotionTelegramConnector.Services
             while (true)
             {
                 var pageViews = new List<PageView>();
-                var pvEvents = _events.ToList();
+                var pvEvents = new List<PageView>();
 
                 PageView item = null;
                 while (_pageViews.TryDequeue(out item))
