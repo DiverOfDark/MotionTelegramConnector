@@ -25,65 +25,102 @@ namespace MotionTelegramConnector.Services
         private readonly string _counter;
         private readonly string _botname;
         
-        private readonly Queue<PageView> _pageViews = new Queue<PageView>(); 
-        private readonly Queue<PageView> _events = new Queue<PageView>(); 
+        private readonly ConcurrentQueue<PageView> _pageViews = new ConcurrentQueue<PageView>(); 
+        private readonly ConcurrentQueue<PageView> _events = new ConcurrentQueue<PageView>();
+        private Timer _timer;
 
         public GoogleAnalyticsService(AppSettings settings)
         {
             _counter = settings.GA_COUNTER;
             _botname = settings.GA_BOTNAME;
+
+            new Thread(StartBackgroundThread) {IsBackground = true}.Start();
         }
-        
-        public async void LogPageView(string moduleName, string session)
+
+        private async void StartBackgroundThread()
         {
+            while (true)
             {
-                var pageView = new PageView
-                {
-                    Session = session,
-                    ModuleName = moduleName
-                };
+                var pageViews = new List<PageView>();
+                var pvEvents = _events.ToList();
 
-                if (pageView.IsValid())
+                PageView item = null;
+                while (_pageViews.TryDequeue(out item))
                 {
-                    _pageViews.Enqueue(pageView);
-                }
-            }
-
-            var list = _pageViews.ToList();
-
-            while (_pageViews.Count > 0)
-            {
-                var item = _pageViews.Dequeue();
-                if (_sessions.ContainsKey(item.Session))
-                {
-                    var user = _sessions[item.Session];
-                    var keys = new Dictionary<string, string>
+                    if (_sessions.ContainsKey(item.Session))
                     {
-                        {"v","1"},
-                        {"tid", _counter},
-                        {"t", "pageview"},
-                        {"dp", _botname + "\\" + item.ModuleName},
-                        {"cid", item.Session},
-                        {"uid", user}
-                    };
-                    var content = new FormUrlEncodedContent(keys);
-                    await HttpClient.PostAsync(Url, content);
+                        var user = _sessions[item.Session];
+                        var keys = new Dictionary<string, string>
+                        {
+                            {"v", "1"},
+                            {"tid", _counter},
+                            {"t", "pageview"},
+                            {"dp", _botname + "\\" + item.ModuleName},
+                            {"cid", item.Session},
+                            {"uid", user}
+                        };
+                        var content = new FormUrlEncodedContent(keys);
+                        await HttpClient.PostAsync(Url, content);
+                    }
+                    else
+                    {
+                        pageViews.Add(item);
+                    }
                 }
-                else
+                while (_events.TryDequeue(out item))
                 {
-                    list.Add(item);
+                    if (_sessions.ContainsKey(item.Session))
+                    {
+                        var user = _sessions[item.Session];
+                        var keys = new Dictionary<string, string>
+                        {
+                            {"v", "1"},
+                            {"tid", _counter},
+                            {"e", "event"},
+                            {"ea", item.ModuleName},
+                            {"ec", "user_actions"},
+                            {"cid", item.Session},
+                            {"uid", user}
+                        };
+                        var content = new FormUrlEncodedContent(keys);
+                        await HttpClient.PostAsync(Url, content);
+                    }
+                    else
+                    {
+                        pvEvents.Add(item);
+                    }
                 }
-            }
 
-            foreach (var item in list)
-            {
-                _pageViews.Enqueue(item);
+                foreach (var baditem in pageViews)
+                {
+                    _pageViews.Enqueue(baditem);
+                }
+
+                foreach (var baditem in pvEvents)
+                {
+                    _events.Enqueue(baditem);
+                }
+                
+                Thread.Sleep(1000);
             }
         }
 
-        public async void LogEvent(string eventName, string session)
+        public void LogPageView(string moduleName, string session)
         {
+            var pageView = new PageView
             {
+                Session = session,
+                ModuleName = moduleName
+            };
+
+            if (pageView.IsValid())
+            {
+                _pageViews.Enqueue(pageView);
+            }
+        }
+
+        public void LogEvent(string eventName, string session)
+        {
                 var pageView = new PageView
                 {
                     Session = session,
@@ -94,40 +131,6 @@ namespace MotionTelegramConnector.Services
                 {
                     _events.Enqueue(pageView);
                 }
-            }
-
-            var list = _events.ToList();
-
-            while (_events.Count > 0)
-            {
-                var item = _events.Dequeue();
-                if (_sessions.ContainsKey(item.Session))
-                {
-                    var user = _sessions[item.Session];
-                    var keys = new Dictionary<string, string>
-                    {
-                        {"v", "1"},
-                        {"tid", _counter},
-                        {"e", "event"},
-                        {"ea", item.ModuleName},
-                        {"ec", "user_actions"},
-                        {"cid", item.Session},
-                        {"uid", user}
-                    };
-                    var content = new FormUrlEncodedContent(keys);
-                    await HttpClient.PostAsync(Url, content);
-                }
-                else
-                {
-                    list.Add(item);
-                }
-            }
-
-            foreach (var item in list)
-            {
-                _events.Enqueue(item);
-            }
-            
             /*
 Dialog Modules – EventNames
 
