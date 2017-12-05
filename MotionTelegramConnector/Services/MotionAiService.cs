@@ -44,12 +44,17 @@ namespace MotionTelegramConnector.Services
             var data = await Extensions.Retry(()=> HttpClient.GetStringAsync(GetUrl(message, session)));
             _logger.LogInformation(data);
 
-            Process(session, data);
+            var response = await Process(session, data);
+
+            if (response.ImmediatelyGoToNext)
+            {
+                data = await SendRequest(message, session);
+            }
 
             return data;
         }
 
-        private async void Process(string session, string data)
+        private async Task<Response> Process(string session, string data)
         {
             var jobject = JsonConvert.DeserializeObject<Response>(data);
 
@@ -136,6 +141,8 @@ namespace MotionTelegramConnector.Services
                     }
                 }
             }
+
+            return jobject;
         }
     }
 }
