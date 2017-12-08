@@ -28,7 +28,7 @@ namespace MotionTelegramConnector.Services
             _client = client;
             _svc = svc;
         }
-        
+
         public async void Init()
         {
             if (!string.IsNullOrWhiteSpace(_settings.WEBSITE_URL))
@@ -45,20 +45,28 @@ namespace MotionTelegramConnector.Services
                     await _client.DeleteWebhookAsync();
                 }
 
-                int lastId = -1; 
-                
+                int lastId = -1;
+
                 _timer = new Timer(async _ =>
                 {
-                    var updates = await _client.GetUpdatesAsync(lastId + 1);
-                    lastId = updates.FirstOrDefault()?.Id ?? lastId;
-                    foreach (var up in updates)
+                    try
                     {
-                        await Process(up);
+                        var updates = await _client.GetUpdatesAsync(lastId + 1);
+                        lastId = updates.FirstOrDefault()?.Id ?? lastId;
+                        foreach (var up in updates)
+                        {
+                            try
+                            {
+                                await Process(up);
+                            }
+                            catch { }
+                        }
                     }
+                    catch { }
                 }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
             }
         }
-        
+
         public async void SendToDebug(string data, [CallerMemberName] string method = null, [CallerFilePath] string file = null, [CallerLineNumber] int line = 0)
         {
             foreach (var chatid in DebugSessions)
@@ -72,7 +80,7 @@ namespace MotionTelegramConnector.Services
         {
             if (update.Message.Text == "/switchDebug")
             {
-                var existing = DebugSessions.FirstOrDefault(v => (string) v == update.Message.Chat.Id);
+                var existing = DebugSessions.FirstOrDefault(v => v.Identifier == update.Message.Chat.Id);
                 if (existing != null)
                 {
                     DebugSessions.Remove(existing);
@@ -85,13 +93,13 @@ namespace MotionTelegramConnector.Services
 
             _logger.LogInformation(JsonConvert.SerializeObject(update));
 
-            await Extensions.Retry(()=> _client.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing));
+            await Extensions.Retry(() => _client.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing));
 
             try
             {
                 var message = update.Message;
 
-                var response = await _svc.SendRequest(update.Message.Text, message.Chat.Id);
+                var response = await _svc.SendRequest(update.Message.Text, message.Chat.Id.ToString());
 
                 SendToDebug(response + "\r\n" + JsonConvert.SerializeObject(message));
             }

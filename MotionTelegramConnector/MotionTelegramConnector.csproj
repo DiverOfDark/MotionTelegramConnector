@@ -16,7 +16,7 @@
       <Version>2.0.3</Version>
     </PackageReference>
     <PackageReference Include="Telegram.Bot">
-      <Version>12.0.0-beta-03</Version>
+      <Version>13.4.0</Version>
     </PackageReference>
   </ItemGroup>
 </Project>
