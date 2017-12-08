@@ -1,11 +1,11 @@
-FROM microsoft/dotnet:1.1.2-sdk as builder
+FROM microsoft/dotnet:2.0.3-sdk as builder
 COPY . /build
 WORKDIR /build
 
 RUN dotnet restore
 RUN dotnet publish --output ../out/ --configuration Release MotionTelegramConnector
 
-FROM microsoft/dotnet:1.1.2-runtime
+FROM microsoft/aspnetcore:2.0.3
 WORKDIR /app
 COPY --from=builder /build/out .
 
@@ -15,4 +15,7 @@ ARG ASPNETCORE_URLS=http://+:$CONTAINER_PORT
 ENV ASPNETCORE_URLS $ASPNETCORE_URLS
 
 EXPOSE $CONTAINER_PORT/tcp
-ENTRYPOINT ["dotnet", "MotionTelegramConnector.dll"]
+
+ADD run.sh .
+
+ENTRYPOINT ["/app/run.sh"]

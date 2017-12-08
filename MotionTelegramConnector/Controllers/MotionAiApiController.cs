@@ -6,7 +6,6 @@ using System.Net;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Server.Kestrel.Internal.Http;
 using MotionTelegramConnector.Services;
 
 namespace MotionTelegramConnector.Controllers
