@@ -99,7 +99,7 @@ namespace MotionTelegramConnector.Services
             {
                 var message = update.Message;
 
-                var response = await _svc.SendRequest(update.Message.Text, message.Chat.Id.ToString());
+                var response = await _svc.SendRequest(update.Message.Text ?? "", message.Chat.Id.ToString());
 
                 SendToDebug(response + "\r\n" + JsonConvert.SerializeObject(message));
             }
