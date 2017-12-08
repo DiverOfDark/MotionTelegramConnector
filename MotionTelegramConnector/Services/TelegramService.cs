@@ -52,7 +52,7 @@ namespace MotionTelegramConnector.Services
                     try
                     {
                         var updates = await _client.GetUpdatesAsync(lastId + 1);
-                        lastId = updates.FirstOrDefault()?.Id ?? lastId;
+                        lastId = updates.LastOrDefault()?.Id ?? lastId;
                         foreach (var up in updates)
                         {
                             try
